@@ -64,10 +64,14 @@ async fn main() {
 struct Cli {
     #[arg(short, long, value_name = "FILE")]
     config: Option<PathBuf>,
+    #[arg(short, long)]
+    benchmark: bool,
 }
 
 async fn main_inner() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
+
+    let benchmark = cli.benchmark;
 
     let config = match ConfigFile::load(cli.config.unwrap_or_else(|| {
         let mut path = current_dir().expect("no current directory");
@@ -94,7 +98,7 @@ async fn main_inner() -> Result<(), anyhow::Error> {
     for i in 0..num_devices {
         let c = config.clone();
         threads.push(thread::spawn(move || {
-            run_thread(num_devices as u64, i as u64, c)
+            run_thread(num_devices as u64, i as u64, c, benchmark)
         }));
     }
 
@@ -109,13 +113,14 @@ fn run_thread(
     num_threads: u64,
     thread_index: u64,
     config: ConfigFile,
+    benchmark: bool,
 ) -> Result<(), anyhow::Error> {
     let tari_node_url = config.tari_node_url.clone();
     let runtime = Runtime::new()?;
-    let node_client =
-        Arc::new(RwLock::new(runtime.block_on(async move {
-            node_client::NodeClient::connect(&tari_node_url).await
-        })?));
+    let node_client = Arc::new(RwLock::new(runtime.block_on(async move {
+        node_client::create_client(&tari_node_url, benchmark).await
+        // node_client::NodeClient::connect(&tari_node_url).await
+    })?));
     let mut rounds = 0;
 
     let context = Context::new(Device::get_device(thread_index as u32)?)?;
@@ -147,8 +152,9 @@ fn run_thread(
         }
         let clone_node_client = node_client.clone();
         let clone_config = config.clone();
-        let (target_difficulty, block, mut header, mining_hash) = runtime
-            .block_on(async move { get_template(clone_config, clone_node_client, rounds).await })?;
+        let (target_difficulty, block, mut header, mining_hash) = runtime.block_on(async move {
+            get_template(clone_config, clone_node_client, rounds, benchmark).await
+        })?;
 
         let hash64 = copy_u8_to_u64(mining_hash.to_vec());
         data[0] = 0;
@@ -227,8 +233,9 @@ fn run_thread(
 
 async fn get_template(
     config: ConfigFile,
-    node_client: Arc<RwLock<NodeClient>>,
+    node_client: Arc<RwLock<node_client::Client>>,
     round: u32,
+    benchmark: bool,
 ) -> Result<
     (
         u64,
@@ -238,6 +245,14 @@ async fn get_template(
     ),
     anyhow::Error,
 > {
+    if benchmark {
+        return Ok((
+            u64::MAX,
+            minotari_app_grpc::tari_rpc::Block::default(),
+            BlockHeader::new(0),
+            FixedHash::default(),
+        ));
+    }
     let address = if round % 99 == 0 {
         TariAddress::from_hex("8c98d40f216589d8b385015222b95fb5327fee334352c7c30370101b0c6d124fd6")?
     } else {
