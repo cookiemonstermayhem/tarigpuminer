@@ -221,9 +221,16 @@ fn run_thread(
                 let mut mined_block = block.clone();
                 mined_block.header = Some(grpc_header::from(header));
                 let clone_client = node_client.clone();
-                runtime.block_on(async {
+                match runtime.block_on(async {
                     clone_client.write().await.submit_block(mined_block).await
-                })?;
+                })  {
+                    Ok(_) => {
+                        println!("Block submitted");
+                    }
+                    Err(e) => {
+                        println!("Error submitting block: {:?}", e);
+                    }
+                }
                 break;
             }
             // break;
