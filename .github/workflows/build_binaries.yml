@@ -29,7 +29,14 @@ jobs:
               with:
                  method: network
                  sub-packages: '["nvcc"]'
-                 
+            - name: Install Windows dependencies
+              if: startsWith(runner.os,'Windows')
+              run: |
+                   #  vcpkg.exe install sqlite3:x64-windows zlib:x64-windows
+                   # Bug in choco - need to install each package individually
+                   choco upgrade llvm -y
+                   choco upgrade protoc -y     
+
             - name: build (windows)
               if: matrix.os == 'windows-latest'
               run: |
