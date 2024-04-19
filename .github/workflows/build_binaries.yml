@@ -28,6 +28,8 @@ jobs:
             - uses: Jimver/cuda-toolkit@v0.2.14
               with:
                  method: network
+                 sub-packages: '["nvcc"]'
+                 
             - name: build (windows)
               if: matrix.os == 'windows-latest'
               run: |
