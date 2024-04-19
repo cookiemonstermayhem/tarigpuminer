@@ -24,7 +24,7 @@ jobs:
                 submodules: false
 
             - name: Setup Rust toolchain
-              uses: dtolnay/rust-toolchain@master
+              uses: dtolnay/rust-toolchain@stable
             - uses: Jimver/cuda-toolkit@v0.2.14
               with:
                  method: network
