@@ -1,0 +1,39 @@
+---
+name: Build Matrix of Binaries
+            
+'on':
+        push:
+            branches:
+                - main
+                - build-*
+
+env: 
+    TARI_TARGET_NETWORK: nextnet
+    TARI_NETWORK: nextnet
+
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [windows-latest]
+                  
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                submodules: false
+
+            - name: Setup Rust toolchain
+              uses: dtolnay/rust-toolchain@master
+            - uses: Jimver/cuda-toolkit@v0.2.14
+              with:
+                 method: network
+            - name: build (windows)
+              if: matrix.os == 'windows-latest'
+              run: |
+                cd src
+                cd miner
+                cargo build --release --bin tarigpuminer
+            - uses: actions/upload-artifact@v4
+              with:
+                path: src/miner/target/release/tarigpuminer.exe
