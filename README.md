@@ -1,4 +1,4 @@
-# tarigpuminer
+# xtrgpuminer
 
 
 Set `config.json` file as such:
@@ -24,3 +24,7 @@ Will be open sourced if get enough followers or when tari genesis block
 
 # 0.1.4
 Add source
+
+# 0.1.5
+* Fix bug in kernel
+* rename
