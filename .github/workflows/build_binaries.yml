@@ -1,0 +1,45 @@
+---
+name: Build Matrix of Binaries
+            
+'on':
+        push:
+            branches:
+                - main
+                - build-*
+
+env: 
+    TARI_TARGET_NETWORK: nextnet
+    TARI_NETWORK: nextnet
+
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [windows-2019]
+                  
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup Rust toolchain
+              uses: dtolnay/rust-toolchain@stable
+            - uses: Jimver/cuda-toolkit@v0.2.14
+              with:
+                 method: network
+                 sub-packages: '["nvcc", "cudart"]'
+            - name: Install Windows dependencies
+              if: startsWith(runner.os,'Windows')
+              run: |
+                   #  vcpkg.exe install sqlite3:x64-windows zlib:x64-windows
+                   # Bug in choco - need to install each package individually
+                   choco upgrade llvm -y
+                   choco upgrade protoc -y     
+
+            - name: build (windows)
+              if: startsWith(runner.os,'Windows')
+              run: |
+                cd src
+                cd miner
+                cargo build --release --bin tarigpuminer
+            - uses: actions/upload-artifact@v4
+              with:
+                path: src/miner/target/release/tarigpuminer.exe
