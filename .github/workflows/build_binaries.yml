@@ -39,7 +39,7 @@ jobs:
               run: |
                 cd src
                 cd miner
-                cargo build --release --bin tarigpuminer
+                cargo build --release --bin xtrgpuminer
             - uses: actions/upload-artifact@v4
               with:
-                path: src/miner/target/release/tarigpuminer.exe
+                path: src/miner/target/release/xtrgpuminer.exe
