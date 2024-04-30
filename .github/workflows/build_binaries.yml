@@ -6,6 +6,8 @@ name: Build Matrix of Binaries
             branches:
                 - main
                 - build-*
+            tags:
+                - "v[0-9]+.[0-9]+.[0-9]+"    
 
 env: 
     TARI_TARGET_NETWORK: nextnet
@@ -42,4 +44,20 @@ jobs:
                 cargo build --release --bin xtrgpuminer
             - uses: actions/upload-artifact@v4
               with:
+                name: xtr_miner
                 path: src/miner/target/release/xtrgpuminer.exe
+
+    create-release:
+      runs-on: ubuntu-latest
+      needs: build
+      if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      steps:
+        - name: Download binaries
+          uses: actions/download-artifact@v4
+        - name: Create release
+          uses: ncipollo/release-action@v1
+          with:
+            artifacts: "xtr_*/**/*"
+            token: ${{ secrets.GITHUB_TOKEN }}
+            prerelease: true
+            draft: true            
