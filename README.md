@@ -1,4 +1,4 @@
-# xtrgpuminer
+### xtrgpuminer
 
 
 Set `config.json` file as such:
